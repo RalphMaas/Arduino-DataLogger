@@ -33,6 +33,7 @@ private:
 	   uint8_t chip_select_pin;
      uint8_t log_pause_button_pin;
      uint8_t state;
+     uint8_t cur_state;
 	   int postfix__filenumber;
      bool in_debug_mode;
      bool start_a_new_file;
@@ -54,5 +55,6 @@ private:
      void write_event();
      void pending_event();
      void error_event();
+     void set_state(uint8_t s);
 };
 #endif

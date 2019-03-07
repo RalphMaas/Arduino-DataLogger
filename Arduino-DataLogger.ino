@@ -70,8 +70,6 @@ void loop(void)
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval)
   {
-    Serial.println(logrtc.get_datetime());
-    
     float shuntvoltage = 0;
     float busvoltage = 0;
     float voltage = 0; 
@@ -111,7 +109,7 @@ void loop(void)
    // displaySerial(shuntvoltage, busvoltage,voltage, current, power, energy);
 
     String dataString = logrtc.get_date()+";"+logrtc.get_time()+";"+";"+String(voltage)+";"+String(current)+";"+String(power)+";"+String(energy);
-    Serial.println(dataString);
+    //Serial.println(dataString);
     logfile.logData(dataString,true);
     
  }

@@ -14,7 +14,7 @@ CSVLogFile::CSVLogFile(uint8_t csPin, uint8_t buttonPin)
 	chip_select_pin = csPin;
 	log_pause_button_pin = buttonPin;
 	start_a_new_file = true;
-	state = STATE_INIT;
+	set_state(STATE_INIT);
 	postfix__filenumber = 0;
 	prev_write_mills = 0;
 	prev_pending_mills = 0;
@@ -61,7 +61,9 @@ void CSVLogFile::onWriteEvent(void *write_event())
 //private methods
 void CSVLogFile::statemachine_run()
 {
-   write_debug_msg("state = "+String(state));
+  if(state != cur_state){
+    write_debug_msg("state = "+String(state));
+  };
 
 	switch (state)
 	{
@@ -84,62 +86,69 @@ void CSVLogFile::statemachine_run()
 		case STATE_WRITE:
 			do_state_write();
 			break;
-	}
- 
+	};
+}
+
+void CSVLogFile::set_state(uint8_t s)
+{
+  cur_state = state;
+  state = s;
 }
 
 void CSVLogFile::do_state_init()
 {
-  state = STATE_PENDING;
-	SD.begin(chip_select_pin) ? state = STATE_PENDING : state = STATE_ERROR;
+	SD.begin(chip_select_pin) ? set_state(STATE_PENDING) : set_state(STATE_ERROR);
 }
 
 void CSVLogFile::do_state_error()
 {
 	error_event();
-	state = STATE_INIT;
+	set_state(STATE_INIT);
 }
-/*
+
+
+
 bool CSVLogFile::start_writing()
 {
   bool result = false;
   int reading = digitalRead(log_pause_button_pin);
- // write_debug_msg("reading");
-// write_debug_msg(String(reading));
 
   if(reading != last_button_state){
     last_decounce_time = millis();
-    write_debug_msg("set last_decounce_time");
   }
 
   if ((millis() - last_decounce_time) > debounce_delay) {
    
-     write_debug_msg("timeout debounce time");
 
     if (reading != button_state ) {
        button_state = reading;
-       write_debug_msg("button state = reading");
     }
+
 
     if (button_state == HIGH){
        write_debug_msg("button state = HIGH");
-      result = true;
+       result = true;
+    }
+    else
+    {
+       write_debug_msg("button state = LOW");
     }
 
   }
   last_button_state = reading;
   return result;  
 }
-*/
+
 
 void CSVLogFile::do_state_pending()
 {
-  if (digitalRead(log_pause_button_pin) == HIGH) {
-    state = STATE_CHECK;
+  if (start_writing()) {
+//  if (digitalRead(log_pause_button_pin) == HIGH) {
+    set_state(STATE_CHECK);
     write_event();
   }
   else {
-    state = STATE_PENDING;
+    set_state(STATE_PENDING);
     start_a_new_file = true;
     pending_event();
   }
@@ -163,7 +172,7 @@ void CSVLogFile::do_state_check()
 	{
 		set_new_filename();
 	}
-	state = STATE_WRITE;
+	set_state(STATE_WRITE);
 }
 
 void CSVLogFile::do_state_write()
@@ -180,16 +189,16 @@ void CSVLogFile::do_state_write()
 			open_file_and_write_data = false;
 
 			write_debug_msg(log_data);
-			state = STATE_PENDING;
+			set_state(STATE_PENDING);
 		}
 		else {
 			write_debug_msg(F("error in doWrite"));
-			state = STATE_ERROR;
+			set_state(STATE_ERROR);
 		}
 	}
 	else
 	{
-		state = STATE_PENDING;
+		set_state(STATE_PENDING);
 	}
 }
 
